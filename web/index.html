@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>GeoTracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        #controls {
+            padding: 1rem;
+            background-color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        #map {
+            height: calc(100vh - 210px);
+            width: 100%;
+        }
+        label {
+            font-weight: bold;
+        }
+        select {
+            padding: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>📍 GeoTracker</header>
+
+    <div id="controls">
+        <label for="numero-select">Selecciona un número:</label>
+        <select id="numero-select">
+            <option value="">Cargando...</option>
+        </select>
+
+        <div><strong>Teléfono:</strong> <span id="telefono">-</span></div>
+        <div><strong>Coordenadas:</strong> <span id="coordenadas">-</span></div>
+        <div><strong>Última actualización:</strong> <span id="hora">-</span></div>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        const firebaseURL = "https://movigeotracker-default-rtdb.firebaseio.com/ubicaciones.json";
+        const select = document.getElementById("numero-select");
+        const map = L.map('map').setView([4.60971, -74.08175], 6);
+        const markerLayer = L.layerGroup().addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data © OpenStreetMap contributors'
+        }).addTo(map);
+
+        let datosFirebase = {};
+
+        async function cargarDatos() {
+            const res = await fetch(firebaseURL);
+            datosFirebase = await res.json();
+            llenarSelector();
+        }
+
+        function llenarSelector() {
+            select.innerHTML = '<option value="">-- Selecciona un número --</option>';
+            for (const telefono in datosFirebase) {
+                const option = document.createElement("option");
+                option.value = telefono;
+                option.textContent = telefono;
+                select.appendChild(option);
+            }
+        }
+
+        function mostrarUbicacion(telefono) {
+            if (!telefono || !datosFirebase[telefono]) return;
+
+            const entradas = Object.entries(datosFirebase[telefono]);
+            entradas.sort((a, b) => b[0] - a[0]); // Más reciente primero
+            const [timestamp, ubicacion] = entradas[0];
+
+            markerLayer.clearLayers();
+
+            const marker = L.marker([ubicacion.lat, ubicacion.lon]);
+            marker.addTo(markerLayer);
+            marker.bindPopup(`📍 ${telefono}`).openPopup();
+
+            document.getElementById("telefono").textContent = telefono;
+            document.getElementById("coordenadas").textContent = `${ubicacion.lat.toFixed(6)}, ${ubicacion.lon.toFixed(6)}`;
+            document.getElementById("hora").textContent = new Date(timestamp * 1000).toLocaleString();
+
+            map.setView([ubicacion.lat, ubicacion.lon], 14);
+        }
+
+        select.addEventListener("change", (e) => {
+            const telefono = e.target.value;
+            mostrarUbicacion(telefono);
+        });
+
+        cargarDatos();
+    </script>
+</body>
+</html>
