@@ -28,6 +28,15 @@ GeoTracker es un sistema completo de rastreo de ubicación en tiempo real que co
 | API            | REST JSON (Firebase)           |
 
 ---
+## ⚙️ Instalación y Configuración
 
-## 📦 Estructura del Proyecto
+### 🔧 Requisitos
 
+- Python 3.10+
+- Un Bot de Telegram activo con su token
+- Proyecto Firebase con Realtime Database habilitado
+
+### 📥 Instalación
+
+```bash
+pip install -r requirements.txt
